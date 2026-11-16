@@ -354,6 +354,13 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .pg .tag.bad { color: #fff; background: var(--pe-red); border-color: var(--pe-red); }
 .pg .tag.wait { color: var(--pe-blue); border-color: color-mix(in srgb, var(--pe-blue) 50%, transparent); }
 /* obras perdidas */
+.pg .pd-mot { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--cds-gap-lg, 1.2rem); align-items: start; }
+@media (max-width: 760px) { .pg .pd-mot { grid-template-columns: 1fr; } }
+.pg .pd-plano { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.45rem; font-size: var(--cds-font-size-caption); }
+.pg .pd-plano b { font-size: 1rem; }
+.pg .pd-leg { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: 0.4rem; }
+.pg .pd-leg span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.pg .pd-leg i { width: 0.65rem; height: 0.65rem; border-radius: 2px; display: inline-block; }
 .pg .pd-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--cds-gap-sm); }
 .pg .pd-tb tr.ok td { background: color-mix(in srgb, var(--pe-green) 14%, transparent); }
 .pg .pd-tb tr.ok td:first-child { box-shadow: inset 3px 0 0 var(--pe-green); }
@@ -564,6 +571,27 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
           <b>Perdida de novo</b><span>A obra voltou a ser perdida numa data seguinte; a perda mais nova aparece na própria linha.</span>
         </div>
       </details>
+    </div>
+    <div class="card wide">
+      <p class="ct">Motivos das programações perdidas</p>
+      <p class="cn">Perdas registradas no acompanhamento diário, por motivo no padrão Enel. A cor mostra onde cada perda está hoje: já executada, reprogramada aguardando a nova data, ou pendente de decisão.</p>
+      <div class="pd-mot">
+        <div>
+          <div class="chart" data-draw="pd-motivos" data-source="perdidas"></div>
+          <div class="pd-leg"><span><i style="background: var(--pe-green)"></i>Executada depois</span><span><i style="background: var(--pe-blue)"></i>Reprogramada, aguardando</span><span><i style="background: var(--pe-red)"></i>Sem nova data, cancelar ou data vencida</span></div>
+        </div>
+        <div>
+          <p class="mp-h">Plano de recuperação</p>
+          <ul class="pd-plano">
+            <li><b data-draw="pd-p-tot" data-source="perdidas">—</b> obras perdidas no período.</li>
+            <li><b data-draw="pd-p-exec" data-source="perdidas">—</b> já reprogramadas e executadas.</li>
+            <li><b data-draw="pd-p-mes" data-source="perdidas contexto">—</b> reprogramadas ainda para este mês.</li>
+            <li><b data-draw="pd-p-seg" data-source="perdidas contexto">—</b> com nova data no mês seguinte.</li>
+            <li><b data-draw="pd-p-canc" data-source="perdidas">—</b> a cancelar (cliente já atendido ou obra sem objeto).</li>
+            <li><b data-draw="pd-p-sem" data-source="perdidas">—</b> sem nova data ou com a data já vencida, pedindo decisão.</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -2252,8 +2280,67 @@ window.MAPA={"w":1440,"h":1028,"m":[{"k":"RERIUTABA","n":"Reriutaba","d":"M339.1
 }
 </script>
 
+<script>
+{
+
+// ---------- motivos das programações perdidas ----------
+(function () {
+  const P = window.PG;
+  const GRP = (s) => (s === 'Executada' ? 'exec' : s === 'Reprogramada' ? 'rep' : 'pend');
+  const COR = { exec: 'var(--pe-green)', rep: 'var(--pe-blue)', pend: 'var(--pe-red)' };
+  const NOME = { exec: 'executadas', rep: 'reprogramadas', pend: 'pendentes' };
+  const nomeMot = (m) => String(m || 'Sem motivo').toUpperCase();
+  dash.draw('pd-motivos', (el) => {
+    el.replaceChildren();
+    const d = dash.data('perdidas');
+    if (d.status !== 'ok') { P.failMsg(el, 'perdidas'); if (!el.children.length) el.textContent = '—'; return; }
+    const m = new Map();
+    d.data.forEach((r) => { const k = nomeMot(r.motivo); const g = m.get(k) || { k, exec: 0, rep: 0, pend: 0, tot: 0 }; g[GRP(r.status)]++; g.tot++; m.set(k, g); });
+    const rows = [...m.values()].sort((a, b) => b.tot - a.tot || a.k.localeCompare(b.k));
+    if (!rows.length) { el.textContent = 'Nenhuma perda registrada no acompanhamento.'; return; }
+    const total = rows.reduce((s, r) => s + r.tot, 0);
+    const w = Math.max(280, el.clientWidth || 520);
+    const nar = w < 480, fs = nar ? 10.5 : 12, lab = nar ? w * 0.45 : Math.min(170, Math.max(110, w * 0.3)), right = 64, bh = 26, gap = 12, top = 6;
+    const h = top + rows.length * (bh + gap);
+    const x = d3.scaleLinear().domain([0, d3.max(rows, (r) => r.tot)]).range([0, w - lab - right]);
+    const svg = d3.create('svg').attr('width', '100%').attr('height', h).attr('viewBox', [0, 0, w, h]).attr('role', 'img')
+      .attr('aria-label', 'Perdas por motivo: ' + rows.map((r) => r.k + ' ' + r.tot).join(', '));
+    const tip = P.mkTip(el);
+    rows.forEach((r, i) => {
+      const y = top + i * (bh + gap);
+      const g = svg.append('g');
+      g.append('text').attr('x', lab - 8).attr('y', y + bh / 2 + 4).attr('text-anchor', 'end').attr('font-size', fs).attr('fill', 'currentColor').text(r.k);
+      let x0 = lab;
+      ['exec', 'rep', 'pend'].forEach((s) => {
+        if (!r[s]) return;
+        const wd = x(r[s]);
+        g.append('rect').attr('x', x0).attr('y', y).attr('width', Math.max(1, wd - 1)).attr('height', bh).attr('rx', 3).attr('fill', COR[s]);
+        if (wd > 18) g.append('text').attr('x', x0 + wd / 2).attr('y', y + bh / 2 + 4).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#fff').attr('font-weight', 600).text(r[s]);
+        x0 += wd;
+      });
+      g.append('text').attr('x', x0 + 6).attr('y', y + bh / 2 + 4).attr('font-size', 12).attr('font-weight', 600).attr('fill', 'currentColor')
+        .text(r.tot + ' · ' + P.pct(r.tot / total * 100));
+      g.append('rect').attr('x', 0).attr('y', y - gap / 2).attr('width', w).attr('height', bh + gap).attr('fill', 'transparent')
+        .on('mousemove', (e) => { const [px, py] = d3.pointer(e, el); tip.show(px, py, r.k + ' — ' + r.tot + (r.tot === 1 ? ' perda' : ' perdas'),
+          ['exec', 'rep', 'pend'].filter((s) => r[s]).map((s) => ({ text: r[s] + ' ' + NOME[s], color: COR[s] }))); })
+        .on('mouseleave', () => tip.hide());
+    });
+    el.append(svg.node());
+  });
+  const cnt = (name, ids, f) => dash.draw(name, (el) => { if (ids.some((i) => dash.data(i).status !== 'ok')) { el.textContent = '—'; return; } el.textContent = P.num(f(P.rows('perdidas'), P.one('contexto') || {})); });
+  cnt('pd-p-tot', ['perdidas'], (a) => new Set(a.map((r) => r.ot)).size);
+  cnt('pd-p-exec', ['perdidas'], (a) => a.filter((r) => r.status === 'Executada').length);
+  cnt('pd-p-mes', ['perdidas', 'contexto'], (a, c) => a.filter((r) => r.status === 'Reprogramada' && String(r.reprogramada_para || '').slice(0, 7) === c.mes_corrente).length);
+  cnt('pd-p-seg', ['perdidas', 'contexto'], (a, c) => a.filter((r) => r.status === 'Reprogramada' && String(r.reprogramada_para || '').slice(0, 7) === c.mes_seguinte).length);
+  cnt('pd-p-canc', ['perdidas'], (a) => a.filter((r) => r.status === 'Cancelar').length);
+  cnt('pd-p-sem', ['perdidas'], (a) => a.filter((r) => ['Sem nova data', 'Data passou sem retorno', 'Perdida de novo'].includes(r.status)).length);
+})();
+
+}
+</script>
+
 </div>
-<p class="rodape-pagina">Página gerada em 16/11/2026 às 15:29 (horário de Brasília) · base técnica de 16/11/2026</p>
+<p class="rodape-pagina">Página gerada em 16/11/2026 às 15:40 (horário de Brasília) · base técnica de 16/11/2026</p>
 <script>dash.__start();</script>
 </body>
 </html>
