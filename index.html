@@ -354,6 +354,9 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .pg .tag.bad { color: #fff; background: var(--pe-red); border-color: var(--pe-red); }
 .pg .tag.wait { color: var(--pe-blue); border-color: color-mix(in srgb, var(--pe-blue) 50%, transparent); }
 /* obras perdidas */
+.pg .pd-tb th button::after { content: '↕'; opacity: 0.35; font-size: 0.85em; }
+.pg .pd-tb th[aria-sort="ascending"] button::after { content: '↑'; opacity: 1; }
+.pg .pd-tb th[aria-sort="descending"] button::after { content: '↓'; opacity: 1; }
 .pg .pd-mot { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--cds-gap-lg, 1.2rem); align-items: start; }
 @media (max-width: 760px) { .pg .pd-mot { grid-template-columns: 1fr; } }
 .pg .pd-plano { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.45rem; font-size: var(--cds-font-size-caption); }
@@ -548,7 +551,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       <div class="pd-top">
         <div>
           <p class="ct">Obras perdidas e reprogramações</p>
-          <p class="cn">Cada linha é uma obra que não foi executada na data prevista, com o motivo e a nova data anotados no acompanhamento diário. Em verde, as que já foram reprogramadas e executadas.</p>
+          <p class="cn">Cada linha é uma obra que não foi executada na data prevista, com o motivo e a nova data anotados no acompanhamento diário. Em verde, as que já foram reprogramadas e executadas. A lista vem em ordem de programação original; clique no título de uma coluna para ordenar por ela.</p>
         </div>
         <div class="seg" role="group" aria-label="Mostrar">
           <button class="sg" data-pd-f="todas" aria-pressed="true">Todas</button>
@@ -558,7 +561,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       </div>
       <div class="tw">
         <table class="mp-tb pd-tb" data-source="perdidas" data-row-key="ot,data_perda">
-          <thead><tr><th data-field="data_original">Programação original</th><th data-field="ot">OT</th><th data-field="municipio">Município</th><th data-field="turma">Turma</th><th data-field="motivo">Motivo</th><th data-field="reprogramada_para">Reprogramada para</th><th data-field="status">Situação</th><th data-field="observacao">Anotação do acompanhamento</th></tr></thead>
+          <thead><tr><th data-field="data_original" aria-sort="ascending"><button type="button" data-pd-sort="data_original">Programação original</button></th><th data-field="ot"><button type="button" data-pd-sort="ot">OT</button></th><th data-field="municipio"><button type="button" data-pd-sort="municipio">Município</button></th><th data-field="turma"><button type="button" data-pd-sort="turma">Turma</button></th><th data-field="motivo"><button type="button" data-pd-sort="motivo">Motivo</button></th><th data-field="reprogramada_para"><button type="button" data-pd-sort="reprogramada_para">Reprogramada para</button></th><th data-field="status"><button type="button" data-pd-sort="status">Situação</button></th><th data-field="observacao">Anotação do acompanhamento</th></tr></thead>
           <tbody data-draw="pd-rows" data-source="perdidas"></tbody>
         </table>
       </div>
@@ -2166,7 +2169,13 @@ window.MAPA={"w":1440,"h":1028,"m":[{"k":"RERIUTABA","n":"Reriutaba","d":"M339.1
   const rep = (r) => (r.reprogramada_para ? P.dmy(r.reprogramada_para) : (r.reprogramada_texto || '—'));
 
   // ----- aba obras perdidas -----
-  const st = { f: 'todas' };
+  const st = { f: 'todas', k: 'data_original', dir: 1 };
+  const sv = (r, k) => (k === 'data_original' ? ymd(r.data_original || r.data_perda) : k === 'ot' ? Number(r.ot) || 0 : k === 'reprogramada_para' ? (r.reprogramada_para || '9999') : String(r[k] || '').toUpperCase());
+  document.querySelectorAll('[data-pd-sort]').forEach((b) => b.addEventListener('click', () => {
+    const k = b.dataset.pdSort; st.dir = st.k === k ? -st.dir : 1; st.k = k;
+    document.querySelectorAll('[data-pd-sort]').forEach((x) => { const th = x.closest('th'); if (th) { if (x.dataset.pdSort === st.k) th.setAttribute('aria-sort', st.dir > 0 ? 'ascending' : 'descending'); else th.removeAttribute('aria-sort'); } });
+    dash.draw('pd-rows');
+  }));
   const pd = () => P.rows('perdidas');
   const k = (name, f) => dash.draw(name, (el) => { const d = dash.data('perdidas'); el.textContent = d.status === 'ok' ? f(pd()) : '—'; });
   k('pd-k-tot', (a) => P.num(a.length));
@@ -2183,7 +2192,7 @@ window.MAPA={"w":1440,"h":1028,"m":[{"k":"RERIUTABA","n":"Reriutaba","d":"M339.1
     tb.replaceChildren();
     const d = dash.data('perdidas'); if (d.status !== 'ok') return;
     pd().filter((r) => st.f === 'todas' || (st.f === 'exec' ? r.status === EXEC : r.status !== EXEC))
-      .slice().sort((a, b) => { const x = ymd(a.data_original || a.data_perda), y = ymd(b.data_original || b.data_perda); return y > x ? 1 : y < x ? -1 : 0; })
+      .slice().sort((a, b) => { const x = sv(a, st.k), y = sv(b, st.k); const c = x > y ? 1 : x < y ? -1 : 0; return (c || (ymd(a.data_original || a.data_perda) > ymd(b.data_original || b.data_perda) ? 1 : -1)) * (c ? st.dir : 1); })
       .forEach((r) => {
         const tr = document.createElement('tr'); tr.dataset.key = encodeURIComponent(r.ot) + ',' + encodeURIComponent(r.data_perda);
         if (r.status === EXEC) tr.className = 'ok';
@@ -2340,7 +2349,7 @@ window.MAPA={"w":1440,"h":1028,"m":[{"k":"RERIUTABA","n":"Reriutaba","d":"M339.1
 </script>
 
 </div>
-<p class="rodape-pagina">Página gerada em 16/11/2026 às 16:14 (horário de Brasília) · base técnica de 16/11/2026</p>
+<p class="rodape-pagina">Página gerada em 16/11/2026 às 16:23 (horário de Brasília) · base técnica de 16/11/2026</p>
 <script>dash.__start();</script>
 </body>
 </html>
