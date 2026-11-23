@@ -479,6 +479,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
               <th class="n" data-field="atraso">Dias</th>
               <th class="n" data-field="exec_apos">Execução após o prazo (dias)</th>
               <th data-field="tipo_sgd">Tipo SGD</th>
+              <th data-field="motivo_prazo">Motivo da perda do prazo</th>
             </tr></thead>
             <tbody data-draw="tb-fora"></tbody>
           </table>
@@ -1143,16 +1144,24 @@ dash.calc('rec_origem', {
 dash.calc('fora_prazo', {
   title: 'Obras fora do prazo na data-base',
   description: 'Obras de clientes cujo prazo caiu antes da data da extração e que continuam na carteira, ou seja, sem energização na base. Obra que vence no próprio dia ainda não conta como atrasada. Traz endereço, data programada e dias de atraso.',
-  inputs: ['carteira_cliente', 'contexto'],
-  fn: (carteira_cliente, contexto) => {
+  inputs: ['carteira_cliente', 'contexto', 'perdidas'],
+  fn: (carteira_cliente, contexto, perdidas) => {
     const base = (contexto[0] || {}).data_base || '';
     const dias = (a, b) => Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 86400000);
+    // motivo da perda do prazo (pedido do usuario em 23/11/2026): a programacao perdida no acompanhamento
+    // com data original ate o prazo; sem perda antes do prazo = a obra ja foi programada depois do prazo
+    const motivo = (o) => {
+      const ps = (perdidas || []).filter((p) => String(p.ot) === String(o.ot) && String(p.data_original || p.data_perda || '').slice(0, 10) <= o.prazo)
+        .sort((x, y) => (String(x.data_original || x.data_perda) < String(y.data_original || y.data_perda) ? 1 : -1));
+      return ps.length && ps[0].motivo ? String(ps[0].motivo) : 'Restrição de capacidade produtiva';
+    };
     return carteira_cliente
       .filter((o) => o.prazo < base)
       .map((o) => ({
         ot: o.ot, municipio: o.municipio, endereco: o.endereco || '', postes: Number(o.postes),
         prazo: o.prazo, programada: o.programada || '', atraso: dias(base, o.prazo),
         exec_apos: o.programada ? dias(o.programada, o.prazo) : null,
+        motivo_prazo: motivo(o),
         tipo_sgd: o.tipo_sgd || ''
       }))
       .sort((a, b) => (a.prazo < b.prazo ? -1 : 1));
@@ -1332,7 +1341,7 @@ dash.draw('tb-fora', (tb) => {
     [[o.ot, ''], [o.municipio, ''], [o.endereco || '—', ''], [P.num(o.postes), 'n'], [P.dmy(o.prazo), ''],
      [o.programada ? P.dmy(o.programada) : 'sem data', ''], [P.num(o.atraso), 'n'],
      [o.exec_apos === null || o.exec_apos === '' ? '—' : P.num(o.exec_apos), 'n' + (Number(o.exec_apos) > 0 ? ' late' + (Number(o.exec_apos) > 7 ? ' muito' : '') : '')],
-     [o.tipo_sgd || '—', '']]
+     [o.tipo_sgd || '—', ''], [o.motivo_prazo || '—', '']]
       .forEach(([v, cls]) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = v; tr.append(td); });
     tb.append(tr);
   });
@@ -2516,7 +2525,7 @@ window.MAPA={"w":1440,"h":1028,"m":[{"k":"RERIUTABA","n":"Reriutaba","d":"M339.1
 </script>
 
 </div>
-<p class="rodape-pagina">Página gerada em 22/11/2026 às 23:54 (horário de Brasília) · base técnica de 19/11/2026 · posição de 23/11/2026</p>
+<p class="rodape-pagina">Página gerada em 23/11/2026 às 00:26 (horário de Brasília) · base técnica de 19/11/2026 · posição de 23/11/2026</p>
 <script>dash.__start();</script>
 </body>
 </html>
