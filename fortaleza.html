@@ -492,7 +492,7 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
 .pg { --en-fz: #1F5FA8; --en-cn: #009C3B; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pg { --en-fz: #5B94D8; --en-cn: #2EB85C; } }
 :root[data-theme="dark"] .pg { --en-fz: #5B94D8; --en-cn: #2EB85C; }
-.pg .en-card { margin-bottom: var(--cds-gap-md); overflow: hidden; position: relative; }
+.pg .en-card { overflow: hidden; position: relative; }
 .pg .en-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--en-fz), var(--en-cn)); }
 .pg .en-card.so1::before { background: var(--en-cn); }
 .pg .en-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--cds-gap-sm); }
@@ -543,6 +543,13 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
 .pg .en-det .mr b { font-variant-numeric: tabular-nums; }
 .pg .en-det .gp { font-size: 0.72rem; color: var(--color-fg-muted); margin-top: 0.35rem; }
 .pg .en-nota { font-size: 0.68rem; color: var(--color-fg-muted); margin: var(--cds-gap-sm) 0 0; text-align: right; line-height: 1.35; }
+/* projeção */
+.pg .en-ct .pj { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; border-top: 1px dashed var(--color-border-line); padding: 0.55rem 0.4rem 0.3rem; margin: 0 -0.4rem;
+  background: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in srgb, var(--enc) 6%, transparent) 7px 9px); border-radius: 0 0 8px 8px; }
+.pg .en-ct .pj .pv { font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; display: block; color: var(--color-fg); }
+.pg .en-ct .pj .nd { display: block; font-size: 0.7rem; color: var(--color-fg-muted); }
+.pg .en-det .bx.fut { border-style: dashed; }
+.pg .en-det .bx.fut .mr .t i { background: repeating-linear-gradient(135deg, var(--enc) 0 4px, color-mix(in srgb, var(--enc) 45%, transparent) 4px 7px); }
 @keyframes en-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes en-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes fxgrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -602,6 +609,7 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
 
   <div class="tabs" role="tablist" aria-label="Painéis">
     <button class="tab" role="tab" id="tb-mapa" aria-controls="sc-mapa" aria-selected="true" data-tab="sc-mapa">Mapa de obras</button>
+    <button class="tab" role="tab" id="tb-energ" aria-controls="sc-energ" aria-selected="false" data-tab="sc-energ">Obras energizadas</button>
     <button class="tab" role="tab" id="tb-prazo" aria-controls="sc-prazo" aria-selected="false" data-tab="sc-prazo">Prazos</button>
     <button class="tab" role="tab" id="tb-perd" aria-controls="sc-perd" aria-selected="false" data-tab="sc-perd">Obras perdidas</button>
     <button class="tab" role="tab" id="tb-prog" aria-controls="sc-prog" aria-selected="false" data-tab="sc-prog">Programação e força de execução</button>
@@ -621,6 +629,27 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
   </div>
 
   <!-- ================= ABA 1 — PRAZOS ================= -->
+  <!-- ================= ABA — OBRAS ENERGIZADAS (25/11/2026) ================= -->
+  <section id="sc-energ" role="tabpanel" aria-labelledby="tb-energ" hidden>
+    <div class="card wide en-card" id="energ">
+      <div class="en-top">
+        <div>
+          <p class="ct">Obras energizadas em <span data-draw="en-ano" data-source="energizadas contexto">—</span></p>
+          <p class="cn">Obras com data de energização na base técnica Enel, no mês e no acumulado do ano, a média por equipe e a projeção do fim do mês e do mês seguinte (parte hachurada). Passe o mouse (ou toque) nas barras e clique num mês para ver todos os municípios energizados nele.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Medida">
+          <button class="sg" type="button" data-en-med="obras" aria-pressed="true">Obras</button>
+          <button class="sg" type="button" data-en-med="postes" aria-pressed="false">Postes</button>
+        </div>
+      </div>
+      <div class="en-grid" data-draw="en-ct" data-source="energizadas equipes contexto carteira_cliente agenda perdidas">—</div>
+      <div class="en-leg" data-draw="en-leg" data-source="energizadas"></div>
+      <div class="chart en-chart" data-draw="en-chart" data-source="energizadas equipes contexto carteira_cliente agenda perdidas">—</div>
+      <div class="en-det" data-draw="en-det" data-source="energizadas equipes contexto carteira_cliente agenda perdidas" aria-live="polite"></div>
+      <p class="en-nota" data-draw="en-nota" data-source="equipes contexto">—</p>
+    </div>
+  </section>
+
   <section id="sc-prazo" role="tabpanel" aria-labelledby="tb-prazo" hidden>
     <div class="tiles">
       <div class="tile lead"><span class="tl">Obras fora do prazo</span><span class="tv bad" data-draw="z-fora" data-source="kpi_prazo" data-field="fora_base" data-row="0">—</span><span class="th2">meta Enel: zero</span></div>
@@ -741,23 +770,6 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
   <!-- ================= ABA 2 — PROGRAMAÇÃO E CAPACIDADE ================= -->
   <!-- ================= ABA — MAPA DE OBRAS ================= -->
   <section id="sc-mapa" role="tabpanel" aria-labelledby="tb-mapa">
-    <div class="card wide en-card" id="energ">
-      <div class="en-top">
-        <div>
-          <p class="ct">Obras energizadas em <span data-draw="en-ano" data-source="energizadas contexto">—</span></p>
-          <p class="cn">Obras com data de energização na base técnica Enel, no mês e no acumulado do ano, e a média por equipe. Passe o mouse (ou toque) nas barras e clique num mês para ver todos os municípios energizados nele.</p>
-        </div>
-        <div class="seg" role="group" aria-label="Medida">
-          <button class="sg" type="button" data-en-med="obras" aria-pressed="true">Obras</button>
-          <button class="sg" type="button" data-en-med="postes" aria-pressed="false">Postes</button>
-        </div>
-      </div>
-      <div class="en-grid" data-draw="en-ct" data-source="energizadas equipes contexto">—</div>
-      <div class="en-leg" data-draw="en-leg" data-source="energizadas"></div>
-      <div class="chart en-chart" data-draw="en-chart" data-source="energizadas equipes contexto">—</div>
-      <div class="en-det" data-draw="en-det" data-source="energizadas equipes contexto" aria-live="polite"></div>
-      <p class="en-nota" data-draw="en-nota" data-source="equipes contexto">—</p>
-    </div>
     <div class="tiles">
       <div class="tile lead"><span class="tl">Obras no mapa</span><span class="tv" data-draw="mp-k-obras" data-source="carteira_cliente obras_enel contexto">—</span><span class="th2">na carteira escolhida</span></div>
       <div class="tile"><span class="tl">Fora do prazo</span><span class="tv bad" data-draw="mp-k-fora" data-source="carteira_cliente obras_enel contexto">—</span><span class="th2">prazo anterior à data-base de <span data-draw="mp-k-base" data-source="contexto">—</span></span></div>
@@ -2841,11 +2853,11 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
   const nota = document.getElementById('reg-nota');
   const DESC = { 'Fortaleza': 'município de Fortaleza', 'Metropolitana': 'demais municípios do CECO 8350', 'Atlântico': 'municípios do CECO 8431' };
   let atual = 'todas';
-  const naMapa = () => { const sc = document.querySelector('section[role="tabpanel"]:not([hidden])'); return !sc || sc.id === 'sc-mapa'; };
+  const naMapa = () => { const sc = document.querySelector('section[role="tabpanel"]:not([hidden])'); return !sc || sc.id === 'sc-mapa' || sc.id === 'sc-energ'; };
   const texto = () => {
     const m = naMapa();
     bar.dataset.mapa = m ? '1' : '0';
-    if (m) return 'O mapa mostra sempre as três regionais juntas. A escolha vale para as outras abas.';
+    if (m) return (document.getElementById('sc-energ') && !document.getElementById('sc-energ').hidden) ? 'Obras energizadas mostra sempre os dois contratos inteiros. A escolha de regional vale para as outras abas.' : 'O mapa mostra sempre as três regionais juntas. A escolha vale para as outras abas.';
     if (atual === 'todas') return 'Mostrando as três regionais: Fortaleza (município de Fortaleza), Metropolitana (demais municípios do CECO 8350) e Atlântico (CECO 8431).';
     return 'Mostrando só a regional ' + atual + ' (' + DESC[atual] + ').';
   };
@@ -3103,11 +3115,11 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
     const ano = base.slice(0, 4), mes = base.slice(0, 7), mi = Number(base.slice(5, 7)), dia = Number(base.slice(8, 10));
     const diasMes = new Date(Date.UTC(Number(ano), mi, 0)).getUTCDate();
     const porMes = new Map();
-    for (let m = 1; m <= mi; m++) porMes.set(ano + '-' + String(m).padStart(2, '0'), { obras: 0, postes: 0, mun: new Map(), cli: 0, enel: 0 });
+    for (let m = 1; m <= mi; m++) porMes.set(ano + '-' + String(m).padStart(2, '0'), { obras: 0, postes: 0, mun: new Map(), cli: 0, enel: 0, enelP: 0 });
     en.forEach((r) => {
       const k = String(r.data || '').slice(0, 7); const g = porMes.get(k); if (!g) return;
       const p = Number(r.postes) || 0; g.obras += 1; g.postes += p;
-      if (String(r.grupo || 'Cliente') === 'Cliente') g.cli += 1; else g.enel += 1;
+      if (String(r.grupo || 'Cliente') === 'Cliente') g.cli += 1; else { g.enel += 1; g.enelP += p; }
       const mu = String(r.municipio || '—'); const x = g.mun.get(mu) || { obras: 0, postes: 0 }; x.obras += 1; x.postes += p; g.mun.set(mu, x);
     });
     // equipes atuais: calendário do mês da base (ou o último mês com equipe até ele)
@@ -3123,13 +3135,37 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
     const fech = [...porMes.entries()].filter(([k]) => k < mes).map(([, g]) => g);
     const mediaMes = { obras: fech.length ? fech.reduce((s, g) => s + g.obras, 0) / fech.length : 0, postes: fech.length ? fech.reduce((s, g) => s + g.postes, 0) / fech.length : 0 };
     const fracMes = Math.min(1, dia / diasMes);
-    return { ct, base, ano, mes, mi, dia, diasMes, porMes, nCon, nLV, mEq, tot, cur, mediaMes, fracMes, mesesAno: (mi - 1) + fracMes };
+    // ---- projeção (pedido de 25/11/2026) ----
+    // taxa de cumprimento da programação no mês: 1 - obras perdidas / obras do calendário até ontem
+    const fimMes = mes + '-' + String(diasMes).padStart(2, '0');
+    const prox = mi === 12 ? (Number(ano) + 1) + '-01' : ano + '-' + String(mi + 1).padStart(2, '0');
+    const ag = dados(ct, 'agenda'), pe = dados(ct, 'perdidas');
+    const progOT = new Set(ag.filter((x) => String(x.data || '').slice(0, 7) === mes && String(x.data).slice(0, 10) < base).map((x) => String(x.ot)));
+    const perdOT = new Set(pe.filter((x) => String(x.data_perda || '').slice(0, 7) === mes && String(x.data_perda).slice(0, 10) < base).map((x) => String(x.ot)));
+    const taxaReal = progOT.size >= 10 ? 1 - perdOT.size / progOT.size : null;
+    const taxa = Math.max(0.4, Math.min(1, taxaReal === null ? 0.75 : taxaReal));
+    const cart = dados(ct, 'carteira_cliente');
+    const soma = (a) => ({ obras: a.length, postes: a.reduce((s2, o) => s2 + (Number(o.postes) || 0), 0), mun: a.reduce((mp, o) => { const k2 = String(o.municipio || '—'); const x2 = mp.get(k2) || { obras: 0, postes: 0 }; x2.obras += 1; x2.postes += Number(o.postes) || 0; mp.set(k2, x2); return mp; }, new Map()) });
+    const resto = soma(cart.filter((o) => o.programada && String(o.programada).slice(0, 10) >= base && String(o.programada).slice(0, 10) <= fimMes));
+    const seg = soma(cart.filter((o) => String(o.programada || '').slice(0, 7) === prox));
+    const enelMed = { obras: fech.length ? fech.reduce((s2, g) => s2 + g.enel, 0) / fech.length : 0, postes: fech.length ? fech.reduce((s2, g) => s2 + g.enelP, 0) / fech.length : 0 };
+    const pj = (m) => ({
+      mes: cur[m] + taxa * resto[m] + enelMed[m] * (1 - fracMes),
+      prox: taxa * seg[m] + enelMed[m],
+      ritmo: fracMes > 0 ? cur[m] / fracMes : cur[m]
+    });
+    return { ct, base, ano, mes, mi, dia, diasMes, porMes, nCon, nLV, mEq, tot, cur, mediaMes, fracMes, mesesAno: (mi - 1) + fracMes,
+      fimMes, prox, taxa, taxaReal, progOT: progOT.size, perdOT: perdOT.size, resto, seg, enelMed, pj };
   }
   const todos = () => contratos().map(resumo).filter(Boolean);
 
   // números que sobem do zero na primeira vez que aparecem
   function conta(el, alvo, chave, fmt) {
     el.textContent = fmt(alvo);
+    requestAnimationFrame(() => conta2(el, alvo, chave, fmt));   // depois de entrar na página
+  }
+  function conta2(el, alvo, chave, fmt) {
+    if (!el.isConnected || el.offsetParent === null) return;   // aba fechada: anima quando ela abrir
     if (reduz() || animados.has(chave) || !alvo) { animados.add(chave); return; }
     animados.add(chave);
     const t0 = performance.now(), dur = 1100;
@@ -3140,7 +3176,7 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
   const outra = () => (st.med === 'obras' ? 'postes' : 'obras');
   const un = (m, v) => (m === 'obras' ? (v === 1 ? 'obra' : 'obras') : (v === 1 ? 'poste' : 'postes'));
 
-  const redraw = () => ['en-ct', 'en-chart', 'en-det', 'en-leg'].forEach((n) => dash.draw(n));
+  const redraw = () => ['en-ct', 'en-chart', 'en-det', 'en-leg', 'en-nota'].forEach((n) => dash.draw(n));
   document.querySelectorAll('[data-en-med]').forEach((b) => b.addEventListener('click', () => {
     st.med = b.dataset.enMed;
     document.querySelectorAll('[data-en-med]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.enMed === st.med ? 'true' : 'false'));
@@ -3180,7 +3216,19 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
       const tr = el('div', 'tr'); const f = el('i'); f.style.width = Math.min(100, pctMed * 100) + '%'; tr.append(f);
       const mk = el('em'); mk.style.left = 'calc(' + Math.min(100, r.fracMes * 100) + '% - 1px)'; mk.title = 'onde o mês estaria no ritmo médio hoje'; tr.append(mk);
       rt.append(tr);
-      c.append(hd, nums, eq, rt);
+      const pj = r.pj(m), pjo = r.pj(o);
+      const pr = el('div', 'pj');
+      const mi2 = r.mi === 12 ? 0 : r.mi;
+      [[MES[r.mi - 1] + ' fechado (projeção)', pj.mes, pjo.mes, 'já ' + num(r.cur[m]) + ' + ≈' + num(Math.round(pj.mes - r.cur[m])) + ' a energizar'],
+       [MES[mi2] + ' (projeção)', pj.prox, pjo.prox, num(r.seg.obras) + ' ' + un('obras', r.seg.obras) + ' já programadas']]
+        .forEach(([t, v, vo, det]) => {
+          const d = el('div'); d.append(el('span', 'nl', t));
+          const nv = el('span', 'pv'); d.append(nv); conta(nv, Math.round(v), r.ct + m + t, (x) => '≈ ' + num(Math.round(x)));
+          d.append(el('span', 'ns', un(m, Math.round(v)) + ' · ≈ ' + num(Math.round(vo)) + ' ' + un(o, Math.round(vo)) + (r.nCon ? ' · ' + dec(v / r.nCon) + ' por equipe' : '')));
+          d.append(el('span', 'nd', det));
+          pr.append(d);
+        });
+      c.append(hd, nums, eq, rt, pr);
       box.append(c);
     });
   });
@@ -3198,24 +3246,35 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
     const meses = [...R[0].porMes.keys()];
     R.slice(1).forEach((r) => r.porMes.forEach((_, k) => { if (!meses.includes(k)) meses.push(k); }));
     meses.sort();
-    if (!st.sel || !meses.includes(st.sel)) st.sel = meses[meses.length - 1];
+    const atual = R[0].mes, prox = R[0].prox;
+    if (!meses.includes(prox)) meses.push(prox);
+    if (!st.sel || !meses.includes(st.sel)) st.sel = atual;
     const w = Math.max(300, box.clientWidth || 600), h = 240, ml = 34, mr = 6, mt = 22, mb = 26;
     const svg = d3.create('svg').attr('viewBox', [0, 0, w, h]).attr('width', '100%').attr('role', 'img')
       .attr('aria-label', (m === 'obras' ? 'Obras' : 'Postes') + ' energizados por mês');
     const x = d3.scaleBand().domain(meses).range([ml, w - mr]).paddingInner(0.18).paddingOuter(0.05);
     const xi = d3.scaleBand().domain(R.map((r) => r.ct)).range([0, x.bandwidth()]).paddingInner(R.length > 1 ? 0.1 : 0);
-    const mx = d3.max(R.flatMap((r) => [...r.porMes.values()].map((g) => g[m]))) || 1;
+    const mx = d3.max(R.flatMap((r) => [...r.porMes.values()].map((g) => g[m]).concat([r.pj(m).mes, r.pj(m).prox]))) || 1;
     const y = d3.scaleLinear().domain([0, mx * 1.08]).nice(4).range([h - mb, mt]);
     y.ticks(4).forEach((t) => {
       svg.append('line').attr('class', 'gl').attr('x1', ml).attr('x2', w - mr).attr('y1', y(t)).attr('y2', y(t));
       svg.append('text').attr('class', 'gt').attr('x', ml - 6).attr('y', y(t) + 3).attr('text-anchor', 'end').text(num(t));
     });
+    const defs = svg.append('defs');
+    R.forEach((r) => {
+      const pt = defs.append('pattern').attr('id', 'en-h-' + r.ct).attr('patternUnits', 'userSpaceOnUse').attr('width', 6).attr('height', 6).attr('patternTransform', 'rotate(45)');
+      pt.append('rect').attr('width', 6).attr('height', 6).attr('fill', COR[r.ct]).attr('opacity', 0.16);
+      pt.append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6).attr('stroke', COR[r.ct]).attr('stroke-width', 2.4).attr('opacity', 0.75);
+    });
     const tip = P.mkTip(box);
     const linhas = (k) => {
       const L = [];
       R.forEach((r) => {
-        const g = r.porMes.get(k); if (!g) return;
+        const g = r.porMes.get(k);
+        if (k === r.prox) { const a = r.pj('obras'), b = r.pj('postes'); L.push({ text: NOME[r.ct] + ': projeção ≈ ' + num(Math.round(a.prox)) + ' obras · ≈ ' + num(Math.round(b.prox)) + ' postes (' + num(r.seg.obras) + ' obras programadas × ' + Math.round(r.taxa * 100) + '% de cumprimento)', color: COR[r.ct] }); return; }
+        if (!g) return;
         L.push({ text: NOME[r.ct] + ': ' + num(g.obras) + ' ' + un('obras', g.obras) + ' · ' + num(g.postes) + ' ' + un('postes', g.postes) + (r.nCon ? ' · ' + dec(g[m] / r.nCon) + ' ' + un(m, 2) + '/equipe' : ''), color: COR[r.ct] });
+        if (k === r.mes) { const a = r.pj('obras'), b = r.pj('postes'); L.push({ text: '   projeção do mês fechado ≈ ' + num(Math.round(a.mes)) + ' obras · ≈ ' + num(Math.round(b.mes)) + ' postes (no ritmo atual ≈ ' + num(Math.round(a.ritmo)) + ' obras)' }); }
       });
       return L;
     };
@@ -3227,11 +3286,19 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
       g.append('rect').attr('class', 'hit').attr('x', x(k) - x.step() * x.paddingInner() / 2).attr('y', mt - 16).attr('width', x.step()).attr('height', h - mb - mt + 16).attr('rx', 6);
       R.forEach((r) => {
         const v = (r.porMes.get(k) || {})[m] || 0; const x0 = x(k) + xi(r.ct), y0 = y(v), ht = y(0) - y(v);
-        g.append('path').attr('class', 'bar').attr('d', top(x0, y0, bw, ht)).attr('fill', COR[r.ct]).style('animation-delay', (j * 0.035) + 's');
-        if (k === st.sel && v) g.append('text').attr('class', 'vl').attr('x', x0 + bw / 2).attr('y', y0 - 5).text(num(v));
+        const pjv = k === r.mes ? r.pj(m).mes : k === r.prox ? r.pj(m).prox : null;
+        if (pjv !== null && pjv > v) {   // parte projetada: hachurada, por cima do que já foi energizado
+          const yp = y(pjv);
+          g.append('path').attr('class', 'bar pjb').attr('d', top(x0, yp, bw, y(v) - yp + (v ? Math.min(rad, ht) : 0))).attr('fill', 'url(#en-h-' + r.ct + ')').attr('stroke', COR[r.ct]).attr('stroke-dasharray', '3 2').attr('stroke-width', 1).style('animation-delay', (j * 0.035 + 0.25) + 's');
+        }
+        if (v) g.append('path').attr('class', 'bar').attr('d', top(x0, y0, bw, ht)).attr('fill', COR[r.ct]).style('animation-delay', (j * 0.035) + 's');
+        if (k === st.sel) {
+          if (pjv !== null) g.append('text').attr('class', 'vl').attr('x', x0 + bw / 2).attr('y', y(Math.max(v, pjv)) - 5).text('≈' + num(Math.round(pjv)));
+          else if (v) g.append('text').attr('class', 'vl').attr('x', x0 + bw / 2).attr('y', y0 - 5).text(num(v));
+        }
       });
       g.append('text').attr('class', 'ml').attr('x', x(k) + x.bandwidth() / 2).attr('y', h - 8).text(MES3[Number(k.slice(5, 7)) - 1]);
-      const titulo = () => MES[Number(k.slice(5, 7)) - 1] + ' ' + k.slice(0, 4) + (k === R[0].mes ? ' (até ' + String(R[0].dia).padStart(2, '0') + '/' + k.slice(5, 7) + ')' : '');
+      const titulo = () => MES[Number(k.slice(5, 7)) - 1] + ' ' + k.slice(0, 4) + (k === R[0].mes ? ' (até ' + String(R[0].dia).padStart(2, '0') + '/' + k.slice(5, 7) + ' + projeção)' : k === R[0].prox ? ' (projeção)' : '');
       const pick = () => { st.sel = k; ['en-chart', 'en-det'].forEach((n) => dash.draw(n)); };
       g.on('mousemove', (e) => { const [px, py] = d3.pointer(e, box); tip.show(px, py, titulo(), linhas(k)); })
         .on('mouseleave', () => tip.hide())
@@ -3248,9 +3315,10 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
     const R = todos(); if (!R.length) return;
     const k = st.sel || R[0].mes; const m = st.med;
     R.forEach((r) => {
-      const g = r.porMes.get(k); if (!g) return;
-      const bx = el('div', 'bx'); bx.style.setProperty('--enc', COR[r.ct]);
-      const bt = el('div', 'bt'); bt.append(document.createTextNode(NOME[r.ct] + ' · ' + MES[Number(k.slice(5, 7)) - 1]), el('span', '', num(g.obras) + ' ' + un('obras', g.obras) + ' · ' + num(g.postes) + ' ' + un('postes', g.postes) + ' · ' + g.mun.size + (g.mun.size === 1 ? ' município' : ' municípios')));
+      const futuro = k === r.prox;
+      const g = futuro ? { obras: r.seg.obras, postes: r.seg.postes, mun: r.seg.mun, cli: r.seg.obras, enel: 0 } : r.porMes.get(k); if (!g) return;
+      const bx = el('div', 'bx' + (futuro ? ' fut' : '')); bx.style.setProperty('--enc', COR[r.ct]);
+      const bt = el('div', 'bt'); bt.append(document.createTextNode(NOME[r.ct] + ' · ' + MES[Number(k.slice(5, 7)) - 1] + (futuro ? ' · já programadas' : '')), el('span', '', num(g.obras) + ' ' + un('obras', g.obras) + ' · ' + num(g.postes) + ' ' + un('postes', g.postes) + ' · ' + g.mun.size + (g.mun.size === 1 ? ' município' : ' municípios')));
       bx.append(bt);
       const lista = [...g.mun.entries()].sort((a, b) => b[1][m] - a[1][m] || b[1].obras - a[1].obras || a[0].localeCompare(b[0]));
       const mx = Math.max(1, ...lista.map(([, v]) => v[m]));
@@ -3261,7 +3329,11 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
         row.append(el('span', '', nm), t, el('b', '', num(v[m])));
         bx.append(row);
       });
-      bx.append(el('div', 'gp', num(g.cli) + ' de clientes · ' + num(g.enel) + ' de interesse Enel' + (r.nCon ? ' · ' + dec(g[m] / r.nCon) + ' ' + un(m, 2) + ' por equipe' : '')));
+      if (futuro) bx.append(el('div', 'gp', 'Programação de clientes já lançada para o mês. Projeção ≈ ' + num(Math.round(r.pj(m).prox)) + ' ' + un(m, 2) + ' (× ' + Math.round(r.taxa * 100) + '% de cumprimento + média de interesse Enel).'));
+      else {
+        bx.append(el('div', 'gp', num(g.cli) + ' de clientes · ' + num(g.enel) + ' de interesse Enel' + (r.nCon ? ' · ' + dec(g[m] / r.nCon) + ' ' + un(m, 2) + ' por equipe' : '')));
+        if (k === r.mes) bx.append(el('div', 'gp', 'Ainda programadas até ' + P.dmy(r.fimMes) + ': ' + num(r.resto.obras) + ' ' + un('obras', r.resto.obras) + ' (' + num(r.resto.postes) + ' postes). Projeção do mês fechado ≈ ' + num(Math.round(r.pj(m).mes)) + ' ' + un(m, 2) + '.'));
+      }
       box.append(bx);
     });
   });
@@ -3271,7 +3343,10 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
     const eq = R.map((r) => NOME[r.ct] + ': ' + r.nCon + ' de construção' + (r.nLV ? ' e ' + r.nLV + ' de Linha Viva' : '') + (r.mEq ? ', calendário de ' + MES[Number(r.mEq.slice(5, 7)) - 1].toLowerCase() : '')).join('; ');
     p.textContent = '* Médias por equipe calculadas com a quantidade atual de equipes de construção (' + eq + '); a Linha Viva apoia as obras e não entra na divisão. '
       + 'Ao longo do ano a quantidade de equipes mudou, principalmente em Fortaleza, então a média do ano é uma referência aproximada. '
-      + 'Energizada = obra com DATA_ENERGIZACAO na base técnica Enel de ' + P.dmy(R[0].base) + '; o mês atual vai até a data da base.';
+      + 'Energizada = obra com DATA_ENERGIZACAO na base técnica Enel de ' + P.dmy(R[0].base) + '; o mês atual vai até a data da base. '
+      + 'Projeção (parte hachurada) = já energizadas + obras de clientes programadas até o fim do mês (no mês seguinte, as já programadas nele) × taxa de cumprimento da programação no mês ('
+      + R.map((r) => NOME[r.ct] + ' ' + Math.round(r.taxa * 100) + '%' + (r.taxaReal === null ? ' (padrão)' : ': ' + (r.progOT - r.perdOT) + ' de ' + r.progOT + ' obras do calendário sem perda')).join('; ')
+      + ') + a média mensal de obras de interesse Enel. Obras novas que entrarem na programação aumentam a projeção do mês seguinte.';
   });
 })();
 
@@ -3279,7 +3354,7 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
 </script>
 
 </div>
-<p class="rodape-pagina">Página gerada em 25/11/2026 às 10:11 (horário de Brasília) · base técnica de 25/11/2026</p>
+<p class="rodape-pagina">Página gerada em 25/11/2026 às 11:17 (horário de Brasília) · base técnica de 25/11/2026</p>
 <script>dash.__start();</script>
 </body>
 </html>
