@@ -39,9 +39,9 @@
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); line-height: 1.4; }
-#dash-root { max-width: 1240px; margin: 0 auto; padding: 16px; }
+#dash-root { max-width: min(1880px, 100%); margin: 0 auto; padding: 16px 24px; }   /* mais largo em telas grandes (25/11/2026) */
 @media (max-width: 560px) { #dash-root { padding: 8px; } }
-.rodape-pagina { max-width: 1240px; margin: 0 auto; padding: 4px 20px 24px; font-size: 0.75rem; color: var(--color-fg-muted); text-align: center; }
+.rodape-pagina { max-width: min(1880px, 100%); margin: 0 auto; padding: 4px 20px 24px; font-size: 0.75rem; color: var(--color-fg-muted); text-align: center; }
 .pg .mark-texto { font-size: 2rem; font-weight: 700; letter-spacing: 0.08em; color: var(--pe-red); margin-bottom: var(--cds-gap-sm); }
 @media print {
   .pg section[hidden] { display: flex !important; }
@@ -559,6 +559,8 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
 .pg .ch-tb tr.ch-nao td:first-child { box-shadow: inset 3px 0 0 var(--pe-red); }
 .pg .pill.nao { color: #fff; background: var(--pe-red); border-color: var(--pe-red); }
 .pg .ch-bar { transform-box: fill-box; transform-origin: center bottom; animation: en-grow .6s var(--cds-ease-out) both; }
+/* tela larga (25/11/2026): o mapa cresce até caber na altura da tela */
+.pg .mp-map { max-width: max(560px, 100vh); margin-inline: auto; }
 </style>
 
 <div class="pg" lang="pt-BR">
@@ -3514,7 +3516,7 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
 </script>
 
 </div>
-<p class="rodape-pagina">Página gerada em 25/11/2026 às 13:55 (horário de Brasília) · base técnica de 25/11/2026</p>
+<p class="rodape-pagina">Página gerada em 25/11/2026 às 15:12 (horário de Brasília) · base técnica de 25/11/2026</p>
 <script>dash.__start();</script>
 </body>
 </html>
