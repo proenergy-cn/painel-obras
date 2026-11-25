@@ -1284,8 +1284,19 @@ dash.calc('rumo_kpi', {
 dash.calc('regulariza', {
   title: 'Obras executadas depois do prazo',
   description: 'Obras de clientes com data programada depois do prazo, ou que vencem até o fim do mês seguinte sem data, com os dias entre o prazo e a execução programada.',
-  inputs: ['carteira_cliente', 'contexto'],
-  fn: (carteira_cliente, contexto) => {
+  inputs: ['carteira_cliente', 'contexto', 'perdidas'],
+  fn: (carteira_cliente, contexto, perdidas) => {
+    // obra programada depois do prazo (pedido de 25/11/2026): motivos das perdas nas programações anteriores
+    // (acompanhamentos diários); sem perda encontrada = restrição de capacidade produtiva
+    const motivoAnt = (o) => {
+      if (!o.programada || o.programada <= o.prazo) return '';
+      const ps = (perdidas || []).filter((p) => String(p.ot) === String(o.ot) && String(p.data_original || p.data_perda || '').slice(0, 10) < o.programada)
+        .sort((x, y) => (String(x.data_original || x.data_perda) < String(y.data_original || y.data_perda) ? -1 : 1));
+      const L = [];
+      ps.forEach((p) => { const m = String(p.motivo || '').trim(); const d = String(p.data_original || p.data_perda || '').slice(0, 10); const t = (m || 'sem motivo') + ' (' + d.slice(8, 10) + '/' + d.slice(5, 7) + ')'; if (!L.includes(t)) L.push(t); });
+      return L.length ? 'Perdida na programação: ' + L.join('; ') : 'Restrição de capacidade produtiva';
+    };
+    const obsDe = (o) => [o.observacao || '', motivoAnt(o)].filter(Boolean).join(' · ');
     const ctx = contexto[0] || {};
     const [ay, am] = String(ctx.mes_seguinte || '').split('-').map(Number);
     const fim = ay ? new Date(Date.UTC(ay, am, 0)).toISOString().slice(0, 10) : '';
@@ -1300,7 +1311,7 @@ dash.calc('regulariza', {
           programada: o.programada || '', alem: o.programada && !passou ? dias(o.programada, o.prazo) : null,
           situacao: !o.programada ? 'Sem data' : passou ? 'Data passou sem execução: reprogramar' : 'Programada depois do prazo',
           campo: o.campo || '',
-          observacao: o.observacao || ''
+          observacao: obsDe(o)
         };
       })
       .sort((a, b) => ((a.programada || '9999') < (b.programada || '9999') ? -1 : (a.programada || '9999') > (b.programada || '9999') ? 1 : a.prazo < b.prazo ? -1 : 1));
@@ -1323,6 +1334,17 @@ dash.calc('fora_prazo', {
         .sort((x, y) => (String(x.data_original || x.data_perda) < String(y.data_original || y.data_perda) ? 1 : -1));
       return ps.length && ps[0].motivo ? String(ps[0].motivo) : 'Restrição de capacidade produtiva';
     };
+    // obra programada depois do prazo (pedido de 25/11/2026): motivos das perdas nas programações anteriores
+    // (acompanhamentos diários); sem perda encontrada = restrição de capacidade produtiva
+    const motivoAnt = (o) => {
+      if (!o.programada || o.programada <= o.prazo) return '';
+      const ps = (perdidas || []).filter((p) => String(p.ot) === String(o.ot) && String(p.data_original || p.data_perda || '').slice(0, 10) < o.programada)
+        .sort((x, y) => (String(x.data_original || x.data_perda) < String(y.data_original || y.data_perda) ? -1 : 1));
+      const L = [];
+      ps.forEach((p) => { const m = String(p.motivo || '').trim(); const d = String(p.data_original || p.data_perda || '').slice(0, 10); const t = (m || 'sem motivo') + ' (' + d.slice(8, 10) + '/' + d.slice(5, 7) + ')'; if (!L.includes(t)) L.push(t); });
+      return L.length ? 'Perdida na programação: ' + L.join('; ') : 'Restrição de capacidade produtiva';
+    };
+    const obsDe = (o) => [o.observacao || '', motivoAnt(o)].filter(Boolean).join(' · ');
     return carteira_cliente
       .filter((o) => o.prazo < base)
       .map((o) => ({
@@ -1331,7 +1353,7 @@ dash.calc('fora_prazo', {
         exec_apos: o.programada ? dias(o.programada, o.prazo) : null,
         motivo_prazo: motivo(o),
         tipo_sgd: o.tipo_sgd || '',
-        observacao: o.observacao || ''
+        observacao: obsDe(o)
       }))
       .sort((a, b) => (a.prazo < b.prazo ? -1 : 1));
   }
@@ -2969,7 +2991,7 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
 </script>
 
 </div>
-<p class="rodape-pagina">Página gerada em 25/11/2026 às 08:37 (horário de Brasília) · base técnica de 25/11/2026</p>
+<p class="rodape-pagina">Página gerada em 25/11/2026 às 08:54 (horário de Brasília) · base técnica de 25/11/2026</p>
 <script>dash.__start();</script>
 </body>
 </html>
