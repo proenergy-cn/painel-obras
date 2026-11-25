@@ -489,9 +489,9 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
 .pg .mp-tk.lv .cab { fill: var(--pe-red); }
 .pg .mp-leg .tk.lv { height: 1.25rem; }
 /* quadro de obras energizadas no mês e no ano, por contrato (pedido de 25/11/2026) */
-.pg { --en-fz: #1F5FA8; --en-cn: #C27C0E; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pg { --en-fz: #5B94D8; --en-cn: #D9952A; } }
-:root[data-theme="dark"] .pg { --en-fz: #5B94D8; --en-cn: #D9952A; }
+.pg { --en-fz: #1F5FA8; --en-cn: #009C3B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pg { --en-fz: #5B94D8; --en-cn: #2EB85C; } }
+:root[data-theme="dark"] .pg { --en-fz: #5B94D8; --en-cn: #2EB85C; }
 .pg .en-card { margin-bottom: var(--cds-gap-md); overflow: hidden; position: relative; }
 .pg .en-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--en-fz), var(--en-cn)); }
 .pg .en-card.so1::before { background: var(--en-cn); }
@@ -745,7 +745,7 @@ window.MAPA_ALL={"w":1440,"h":1129,"m":[{"k":"ACARAPE","n":"Acarape","d":"M1082.
       <div class="en-top">
         <div>
           <p class="ct">Obras energizadas em <span data-draw="en-ano" data-source="energizadas contexto">—</span></p>
-          <p class="cn">Obras com data de energização na base técnica Enel, no mês e no acumulado do ano, e a média por equipe. Passe o mouse (ou toque) nas barras e clique num mês para ver os municípios.</p>
+          <p class="cn">Obras com data de energização na base técnica Enel, no mês e no acumulado do ano, e a média por equipe. Passe o mouse (ou toque) nas barras e clique num mês para ver todos os municípios energizados nele.</p>
         </div>
         <div class="seg" role="group" aria-label="Medida">
           <button class="sg" type="button" data-en-med="obras" aria-pressed="true">Obras</button>
@@ -3250,9 +3250,9 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
     R.forEach((r) => {
       const g = r.porMes.get(k); if (!g) return;
       const bx = el('div', 'bx'); bx.style.setProperty('--enc', COR[r.ct]);
-      const bt = el('div', 'bt'); bt.append(document.createTextNode(NOME[r.ct] + ' · ' + MES[Number(k.slice(5, 7)) - 1]), el('span', '', num(g.obras) + ' ' + un('obras', g.obras) + ' · ' + num(g.postes) + ' ' + un('postes', g.postes)));
+      const bt = el('div', 'bt'); bt.append(document.createTextNode(NOME[r.ct] + ' · ' + MES[Number(k.slice(5, 7)) - 1]), el('span', '', num(g.obras) + ' ' + un('obras', g.obras) + ' · ' + num(g.postes) + ' ' + un('postes', g.postes) + ' · ' + g.mun.size + (g.mun.size === 1 ? ' município' : ' municípios')));
       bx.append(bt);
-      const lista = [...g.mun.entries()].sort((a, b) => b[1][m] - a[1][m] || b[1].obras - a[1].obras).slice(0, 6);
+      const lista = [...g.mun.entries()].sort((a, b) => b[1][m] - a[1][m] || b[1].obras - a[1].obras || a[0].localeCompare(b[0]));
       const mx = Math.max(1, ...lista.map(([, v]) => v[m]));
       if (!lista.length) bx.append(el('div', 'gp', 'Nenhuma obra energizada neste mês.'));
       lista.forEach(([mu, v], i) => {
@@ -3261,7 +3261,6 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
         row.append(el('span', '', nm), t, el('b', '', num(v[m])));
         bx.append(row);
       });
-      if (g.mun.size > 6) bx.append(el('div', 'gp', '+ ' + (g.mun.size - 6) + ' municípios'));
       bx.append(el('div', 'gp', num(g.cli) + ' de clientes · ' + num(g.enel) + ' de interesse Enel' + (r.nCon ? ' · ' + dec(g[m] / r.nCon) + ' ' + un(m, 2) + ' por equipe' : '')));
       box.append(bx);
     });
@@ -3280,7 +3279,7 @@ window.MAPA={"w":1440,"h":1330,"m":[{"k":"ACARAPE","n":"Acarape","d":"M732.5 833
 </script>
 
 </div>
-<p class="rodape-pagina">Página gerada em 25/11/2026 às 10:00 (horário de Brasília) · base técnica de 25/11/2026</p>
+<p class="rodape-pagina">Página gerada em 25/11/2026 às 10:11 (horário de Brasília) · base técnica de 25/11/2026</p>
 <script>dash.__start();</script>
 </body>
 </html>
