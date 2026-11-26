@@ -185,6 +185,25 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .pg .lst-bd .scroll { max-height: 66vh; }
 .pg .fechar { appearance: none; border: 1px solid var(--color-border-line); background: var(--color-bg); border-radius: 999px; font: inherit; font-size: var(--cds-font-size-caption); padding: 0.4rem 0.9rem; cursor: pointer; white-space: nowrap; }
 .pg .fx dd .lk { font-weight: 600; }
+.pg .lst-bt { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+.pg .fechar.exp { background: var(--pe-ink); color: #fff; border-color: var(--pe-ink); font-weight: 600; }
+#rel { display: none; }
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body.imprimindo { background: #fff; }
+  body.imprimindo > *:not(#rel) { display: none !important; }
+  body.imprimindo #rel { display: block; font-family: "Segoe UI", Arial, sans-serif; color: #1F1E1D; font-size: 9pt; }
+  #rel .rh { display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #2B2D2F; padding-bottom: 6px; margin-bottom: 8px; }
+  #rel .rh img { height: 34px; }
+  #rel h2 { font-size: 13pt; margin: 0; } #rel .rs { color: #555; margin: 2px 0 0; font-size: 8.5pt; }
+  #rel .res { margin: 6px 0 8px; font-size: 9pt; } #rel .res b { font-weight: 700; }
+  #rel table { border-collapse: collapse; width: 100%; font-size: 8pt; }
+  #rel th { background: #2B2D2F; color: #fff; text-align: left; padding: 3px 5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #rel td { padding: 2.5px 5px; border-bottom: 1px solid #ddd; white-space: nowrap; }
+  #rel td.n, #rel th.n { text-align: right; } #rel td.r { color: #C0392F; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #rel tr { page-break-inside: avoid; } #rel thead { display: table-header-group; }
+  #rel .rp { margin-top: 8px; color: #777; font-size: 7.5pt; }
+}
 </style>
 </head>
 <body>
@@ -308,7 +327,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
   <p class="nota" style="margin-top:var(--cds-gap-lg)">Como ler: a obra entra no fechamento quando recebe a data de energização na base técnica da Enel e sai quando recebe a data de UF (DATA_ULT_FISCALIZ). O fechador aponta a obra no sistema Enel e a lança na planilha de controle; a liquidação confere, liquida os materiais e insere a UF. Valor previsto = VR_MAO_DE_OBRA da base; valor apontado = informado pelo fechador. Prazos em dias corridos. Gerado em <span id="k-ger">—</span>.</p>
  </div>
  <dialog class="lst" id="lst" aria-labelledby="lst-t">
-  <div class="lst-hd"><div><p class="ct" id="lst-t">—</p><p class="cn" id="lst-s" style="margin-bottom:0"></p></div><button class="fechar" type="button" id="lst-x">Fechar ✕</button></div>
+  <div class="lst-hd"><div><p class="ct" id="lst-t">—</p><p class="cn" id="lst-s" style="margin-bottom:0"></p></div><div class="lst-bt"><button class="fechar exp" type="button" id="lst-xls">⬇ Excel</button><button class="fechar exp" type="button" id="lst-pdf">⬇ PDF</button><button class="fechar" type="button" id="lst-x">Fechar ✕</button></div></div>
   <div class="lst-bd"><div class="tw scroll" id="lst-tb"></div></div>
  </dialog>
 </div>
@@ -420,6 +439,7 @@ function tabela(el, cols, rows, sortKey, desc) {
   function draw() {
     let rs = rows.filter(r => cols.every(c => { const f = st.f[c.k]; return !f || String(c.txt ? c.txt(r) : r[c.k] ?? "").toLowerCase().includes(f.toLowerCase()); }));
     if (st.k) rs = rs.slice().sort((a, b) => { const va = a[st.k], vb = b[st.k]; const r = va == null ? 1 : vb == null ? -1 : va < vb ? -1 : va > vb ? 1 : 0; return st.d ? -r : r; });
+    el._cols = cols; el._rs = rs;
     const tb = el.querySelector("tbody");
     tb.innerHTML = rs.length ? rs.map(r => "<tr>" + cols.map(c => { const v = c.txt ? c.txt(r) : r[c.k]; const cl = [c.n ? "n" : "", c.cls ? c.cls(r) : ""].join(" "); return `<td class="${cl}">${esc(v == null ? "—" : v)}</td>`; }).join("") + "</tr>").join("")
       : `<tr><td colspan="${cols.length}" class="nota">Nenhuma obra.</td></tr>`;
@@ -459,12 +479,93 @@ const C_OBRA = [
   { k: "fechador", l: "Lançada por", txt: r => r.fechador || "não lançada" },
   { k: "vr", l: "Previsto M.O.", n: 1, soma: 1, txt: r => R(r.vr) }, { k: "postes", l: "Postes", n: 1 }];
 const dlg = document.getElementById("lst");
+const LST = { t: "", ctn: "" };
+// ---------- relatórios (Excel e PDF) da lista aberta: exatamente o que está na tela (filtros e ordem)
+function linhasRel() {
+  const el = $("#lst-tb"), cols = el._cols || [], rs = el._rs || [];
+  const val = (c, r) => { const v = c.txt ? c.txt(r) : r[c.k]; return v == null ? "" : v; };
+  return { cols, rs, val };
+}
+function resumoResp(cols, rs) {
+  const c = cols.find(x => x.k === "fechador") || cols.find(x => x.k === "resp"); if (!c || !rs.length) return [];
+  const g = {}; rs.forEach(r => { const k = (c.txt ? c.txt(r) : r[c.k]) || "—"; (g[k] = g[k] || { n: 0, vr: 0, v: 0 }).n++; g[k].vr += r.vr || 0; if ((r.dias > PF && r.etapa === "apontamento") || r.dias_eli > PE || r.dias > VELHA) g[k].v++; });
+  return Object.entries(g).sort((a, b) => b[1].n - a[1].n);
+}
+function nomeArq(ext) {
+  const sl = LST.t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w]+/g, " ").trim().slice(0, 70);
+  return "Fechamento - " + sl + " - " + dmy(BASE).replace(/\//g, "-") + "." + ext;
+}
+function baixar(blob, nome) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+// xlsx mínimo (zip sem compressão) - sem bibliotecas, funciona offline
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u) { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  const u16 = v => [v & 255, (v >>> 8) & 255], u32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  files.forEach(([nome, txt]) => {
+    const nb = enc.encode(nome), db = enc.encode(txt), cr = crc32(db);
+    const h = [...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(cr), ...u32(db.length), ...u32(db.length), ...u16(nb.length), ...u16(0)];
+    parts.push(new Uint8Array(h), nb, db);
+    cen.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(cr), ...u32(db.length), ...u32(db.length), ...u16(nb.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), nb);
+    off += h.length + nb.length + db.length;
+  });
+  const cl = cen.reduce((s, x) => s + x.length, 0);
+  return new Blob([...parts, ...cen, new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cl), ...u32(off), ...u16(0)])],
+    { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function exportarExcel() {
+  const { cols, rs, val } = linhasRel();
+  const x = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  const ref = (ci, ri) => { let s = "", n = ci + 1; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; } return s + ri; };
+  const cel = (ci, ri, v, st) => typeof v === "number" && isFinite(v) ? `<c r="${ref(ci, ri)}" s="${st || 0}"><v>${v}</v></c>` : `<c r="${ref(ci, ri)}" t="inlineStr" s="${st || 0}"><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+  const lin = []; let ri = 1;
+  lin.push(`<row r="${ri}">${cel(0, ri, LST.t, 3)}</row>`); ri++;
+  lin.push(`<row r="${ri}">${cel(0, ri, "Proenergy · Contrato: " + LST.ctn + " · base técnica de " + dmy(BASE) + " · " + rs.length + " obra(s)")}</row>`); ri++;
+  const res = resumoResp(cols, rs);
+  if (res.length) { ri++; lin.push(`<row r="${ri}">${cel(0, ri, "Responsável", 1)}${cel(1, ri, "Obras", 1)}${cel(2, ri, "Com alerta (prazo/antiga)", 1)}${cel(3, ri, "Previsto M.O. (R$)", 1)}</row>`); ri++;
+    res.forEach(([k, g]) => { lin.push(`<row r="${ri}">${cel(0, ri, k)}${cel(1, ri, g.n)}${cel(2, ri, g.v)}${cel(3, ri, Math.round(g.vr * 100) / 100, 2)}</row>`); ri++; }); }
+  ri++; const hr = ri;
+  lin.push(`<row r="${ri}">${cols.map((c, i) => cel(i, ri, c.l, 1)).join("")}</row>`); ri++;
+  rs.forEach(r => { lin.push(`<row r="${ri}">${cols.map((c, i) => { const raw = r[c.k];
+      const moeda = ["vr", "apontado"].includes(c.k);
+      const v = (c.n && typeof raw === "number") ? raw : val(c, r);
+      return cel(i, ri, v, moeda && typeof v === "number" ? 2 : 0); }).join("")}</row>`); ri++; });
+  const somas = cols.map((c, i) => c.soma ? cel(i, ri, Math.round(sum(rs, r => r[c.k]) * 100) / 100, 4) : i === 0 ? cel(0, ri, "TOTAL (" + rs.length + " obras)", 1) : "").join("");
+  lin.push(`<row r="${ri}">${somas}</row>`);
+  const larg = cols.map((c, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.min(40, Math.max(10, c.l.length + 2, ...rs.slice(0, 200).map(r => String(val(c, r)).length + 2)))}" customWidth="1"/>`).join("");
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="${hr}" topLeftCell="A${hr + 1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${larg}</cols><sheetData>${lin.join("")}</sheetData><autoFilter ref="A${hr}:${ref(cols.length - 1, Math.max(hr, ri - 1))}"/></worksheet>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="&quot;R$&quot; #,##0.00"/></numFmts><fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="14"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2B2D2F"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="5"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/><xf numFmtId="164" applyNumberFormat="1"/><xf fontId="2" applyFont="1"/><xf numFmtId="164" fontId="1" fillId="2" applyNumberFormat="1" applyFont="1" applyFill="1"/></cellXfs></styleSheet>`;
+  baixar(zip([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Obras" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">Obras!$A$${hr}:$${ref(cols.length - 1, Math.max(hr, ri - 1)).replace(/(\d+)$/, "$$$1")}</definedName></definedNames></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/worksheets/sheet1.xml", sheet], ["xl/styles.xml", styles]
+  ]), nomeArq("xlsx"));
+}
+function exportarPDF() {
+  const { cols, rs, val } = linhasRel();
+  let rel = document.getElementById("rel"); if (!rel) { rel = document.createElement("div"); rel.id = "rel"; document.body.appendChild(rel); }
+  const res = resumoResp(cols, rs);
+  const somas = cols.filter(c => c.soma).map(c => c.l + ": <b>" + R(sum(rs, r => r[c.k])) + "</b>").join(" · ");
+  rel.innerHTML = `<div class="rh"><img src="${document.querySelector(".mark").src}" alt="Proenergy"><div><h2>${esc(LST.t)}</h2><p class="rs">Fechamento de obras · Contrato: ${esc(LST.ctn)} · base técnica de ${dmy(BASE)} · relatório gerado em ${new Date().toLocaleString("pt-BR")}</p></div></div>
+    <p class="res"><b>${rs.length}</b> obra(s)${somas ? " · " + somas : ""}${res.length ? "<br>Por responsável: " + res.map(([k, g]) => `<b>${esc(k)}</b> ${g.n} obra(s)${g.v ? " (" + g.v + " com alerta)" : ""} · ${Rk(g.vr)}`).join(" &nbsp;|&nbsp; ") : ""}</p>
+    <table><thead><tr>${cols.map(c => `<th class="${c.n ? "n" : ""}">${esc(c.l)}</th>`).join("")}</tr></thead><tbody>${rs.map(r => "<tr>" + cols.map(c => `<td class="${c.n ? "n" : ""} ${c.cls ? c.cls(r) : ""}">${esc(val(c, r))}</td>`).join("") + "</tr>").join("")}</tbody></table>
+    <p class="rp">Em vermelho: fora do prazo (fechador ${PF} dias da energização ao lançamento; liquidação ${PE} dias do lançamento à UF) ou obra com mais de 3 meses sem UF. Fonte: base técnica Enel e planilha de controle dos fechadores. Painel: proenergy-cn.github.io/painel-obras/fechamento.html</p>`;
+  document.body.classList.add("imprimindo");
+  const fim = () => { document.body.classList.remove("imprimindo"); window.removeEventListener("afterprint", fim); };
+  window.addEventListener("afterprint", fim);
+  const tt = document.title; document.title = nomeArq("pdf").replace(/\.pdf$/, "");
+  setTimeout(() => { window.print(); document.title = tt; }, 50);
+}
+$("#lst-xls").onclick = exportarExcel;
+$("#lst-pdf").onclick = exportarPDF;
 $("#lst-x").onclick = () => dlg.close();
 dlg.addEventListener("click", ev => { if (ev.target === dlg) dlg.close(); });
 function lista(titulo, rows, cols, sortKey, sub) {
-  hideTip();
+  hideTip(); document.body.classList.remove("imprimindo");
   const ctn = CT === "all" ? "Fortaleza e Centro Norte" : CT === "fz" ? "Fortaleza" : "Centro Norte";
-  $("#lst-t").textContent = titulo;
+  $("#lst-t").textContent = titulo; LST.t = titulo; LST.ctn = ctn;
   $("#lst-s").textContent = (sub ? sub + " · " : "") + "Contrato: " + ctn + " · base técnica de " + dmy(BASE) + ". Toque no título da coluna para ordenar.";
   tabela($("#lst-tb"), CT === "all" ? cols : cols.filter(c => c.k !== "contrato"), rows, sortKey, true);
   if (!dlg.open) dlg.showModal();
