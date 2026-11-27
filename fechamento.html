@@ -318,7 +318,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     <div class="tiles5" id="tiles-uf"></div>
     <div class="card wide">
       <div class="row"><div><p class="ct">Obras liquidadas (UF) mês a mês</p><p class="cn">Obras que receberam a data de UF em cada mês do ano. Toque numa barra para ver as obras. <span id="nota-iniv"></span></p></div>
-        <div class="seg" role="group" aria-label="Métrica" id="seg-metuf"><button class="sg" data-mu="valor" aria-pressed="true">Valor apontado</button><button class="sg" data-mu="obras" aria-pressed="false">Obras</button><button class="sg" data-mu="postes" aria-pressed="false">Postes</button></div></div>
+        <div class="seg" role="group" aria-label="Métrica" id="seg-metuf"><button class="sg" data-mu="valor" aria-pressed="true">Valor (R$)</button><button class="sg" data-mu="obras" aria-pressed="false">Obras</button><button class="sg" data-mu="postes" aria-pressed="false">Postes</button></div></div>
       <div class="lgd" id="lgd-uf"></div>
       <div class="chart" id="ch-ufano"></div>
     </div>
@@ -328,7 +328,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     </div>
     <div class="card wide">
       <p class="ct">Obras liquidadas — <span class="per-uf">—</span></p>
-      <p class="cn">Valor apontado = informado pelo Asbuilt na planilha de controle. Obras liquidadas sem lançamento na planilha aparecem sem valor.</p>
+      <p class="cn">Valor = apontado pelo Asbuilt na planilha de controle; obra sem apontamento entra com a M.O. prevista da base técnica (coluna "Origem do valor").</p>
       <div class="tw scroll" id="tb-uf"></div>
     </div>
   </section>
@@ -506,7 +506,8 @@ function tabela(el, cols, rows, sortKey, desc) {
 }
 
 // ---------- lista de obras (janela que abre ao clicar)
-const OB = D.obras.map(a => { const o = {}; D.obras_cols.forEach((k, i) => o[k] = a[i]); o.dias_uf = o.uf && o.energ ? Math.round((new Date(o.uf) - new Date(o.energ)) / 864e5) : null; return o; });
+const OB = D.obras.map(a => { const o = {}; D.obras_cols.forEach((k, i) => o[k] = a[i]); o.dias_uf = o.uf && o.energ ? Math.round((new Date(o.uf) - new Date(o.energ)) / 864e5) : null;
+  o.valor = o.apontado != null ? o.apontado : (o.vr || 0); o.origem = o.apontado != null ? "apontado" : "M.O. da base"; return o; });
 const ETL = { apontamento: "Asbuilt", liquidacao: "Liquidação" };
 const dp = p => p.dias_prazo ?? p.dias;   // prazo do Asbuilt: conta da energização, ou da solução da pendência Enel
 const VELHA = 90;   // obra muito antiga: energizada há mais de 3 meses sem UF (pedido de 25/11/2026)
@@ -538,7 +539,8 @@ const C_LIQ = [
   { k: "energ", l: "Energização", txt: r => dmy(r.energ) }, { k: "uf", l: "UF", txt: r => dmy(r.uf) },
   { k: "dias_uf", l: "Dias energização → UF", n: 1, cls: r => r.dias_uf > PF + PE ? "r" : "" },
   { k: "fechador", l: "Asbuilt", txt: r => r.fechador || "não lançada" },
-  { k: "apontado", l: "Valor apontado", n: 1, soma: 1, txt: r => r.apontado == null ? "—" : R(r.apontado) }, { k: "postes", l: "Postes", n: 1 }];
+  { k: "valor", l: "Valor (R$)", n: 1, soma: 1, txt: r => R(r.valor) }, { k: "origem", l: "Origem do valor", txt: r => r.origem === "apontado" ? "apontado pelo Asbuilt" : "M.O. prevista (base técnica)" },
+  { k: "postes", l: "Postes", n: 1 }];
 const listaLiq = (t, rows) => lista(t, rows, C_LIQ, "uf");
 const dlg = document.getElementById("lst");
 const LST = { t: "", ctn: "" };
@@ -675,7 +677,7 @@ function render() {
       [() => listaPend(`No Asbuilt há mais de ${PF} dias`, foraF)]],
     ["Na liquidação (aguardando UF)", N(Pl.length), `${Rk(sum(Pl, p => p.vr))} · <button class="lk ${foraE.length ? "bad" : ""}" data-k="0"><b>${N(foraE.length)}</b> fora do prazo de ${PE} dias</button>${semData.length ? ' · <button class="lk" data-k="1">' + N(semData.length) + " importadas sem data</button>" : ""}`, "", () => listaPend("Na liquidação: lançadas pelo Asbuilt, aguardando UF", Pl),
       [() => listaPend(`Na liquidação há mais de ${PE} dias`, foraE), () => listaPend("Na liquidação, importadas da planilha antiga (sem data de lançamento)", semData)]],
-    ["Liquidadas (UF) em " + mlab(hojeMes), N(ufMesOb.length), Rk(sum(ufMesOb, c => c.apontado)) + " apontados · " + N(sum(ufMesOb, c => c.postes)) + " postes", "", () => listaLiq("Obras liquidadas (UF) em " + mlab(hojeMes), ufMesOb)],
+    ["Liquidadas (UF) em " + mlab(hojeMes), N(ufMesOb.length), Rk(sum(ufMesOb, c => c.valor)) + " · " + N(sum(ufMesOb, c => c.postes)) + " postes", "", () => listaLiq("Obras liquidadas (UF) em " + mlab(hojeMes), ufMesOb)],
     ["Apontado em " + mlab(hojeMes), Rk(sum(apMes, x => x.apontado)), `${N(apMes.length)} obras · ${N(sum(apMes, x => x.postes))} postes`, "", () => listaLanc("Obras apontadas em " + mlab(hojeMes), apMes)]
   ]);
   // obras muito antigas
@@ -789,22 +791,22 @@ function renderUF() {
   const per = MESUF === "ano" ? "ano de " + ano : mlab(MESUF), Up = MESUF === "ano" ? U : U.filter(o => o.uf.slice(0, 7) === MESUF);
   $$(".per-uf").forEach(e => e.textContent = per);
   const nm = Math.max(1, ms.length), semv = Up.filter(o => o.apontado == null);
-  // o valor apontado só existe desde que a planilha de controle começou (meses anteriores ficam sem valor)
-  const iniV = U.filter(o => o.apontado != null).map(o => o.uf.slice(0, 7)).sort()[0] || BASE.slice(0, 7);
-  const nmV = Math.max(1, ms.filter(m => m >= iniV).length);
   tiles($("#tiles-uf"), [
     ["Obras liquidadas · " + per, N(Up.length), `No ano: <b>${N(U.length)}</b> · média de ${nf0.format(U.length / nm)} por mês`, "lead", () => listaLiq("Obras liquidadas (UF) — " + per, Up)],
     ["Postes · " + per, N(sum(Up, o => o.postes)), `No ano: <b>${N(sum(U, o => o.postes))}</b> · média de ${nf0.format(sum(U, o => o.postes) / nm)} por mês`, "", () => listaLiq("Obras liquidadas (UF) — " + per, Up)],
-    ["Valor apontado · " + per, Rk(sum(Up, o => o.apontado)), `No ano (desde ${mlab(iniV)}): <b>${Rk(sum(U, o => o.apontado))}</b> · média de ${Rk(sum(U, o => o.apontado) / nmV)} por mês`, "", () => listaLiq("Obras liquidadas (UF) — " + per, Up)],
-    ["Sem valor apontado", N(semv.length), "liquidadas sem lançamento na planilha de controle", "", semv.length ? () => listaLiq("Liquidadas sem valor apontado — " + per, semv) : null]
+    ["Valor · " + per, Rk(sum(Up, o => o.valor)), `No ano: <b>${Rk(sum(U, o => o.valor))}</b> · média de ${Rk(sum(U, o => o.valor) / nm)} por mês`, "", () => listaLiq("Obras liquidadas (UF) — " + per, Up)],
+    ["Valor da M.O. da base técnica", Rk(sum(semv, o => o.valor)), `${N(semv.length)} obra(s) sem apontamento na planilha de controle · usado o VR_MAO_DE_OBRA`, "", semv.length ? () => listaLiq("Liquidadas sem apontamento (valor da M.O. da base) — " + per, semv) : null]
   ]);
-  const met = { valor: o => o.apontado, obras: () => 1, postes: o => o.postes }[MU], fm = MU === "valor" ? Rk : N;
-  const S = [{ k: "Fortaleza", l: "Fortaleza", c: "#1F5FA8" }, { k: "Centro Norte", l: "Centro Norte", c: "#1E8E5A" }].filter(z => CT === "all" || ok({ contrato: z.k }));
+  const met = { valor: o => o.valor, obras: () => 1, postes: o => o.postes }[MU], fm = MU === "valor" ? Rk : N;
+  // no valor, a parte que veio da M.O. da base técnica (obra sem apontamento) aparece num tom mais claro
+  const CS = [{ k: "Fortaleza", c: "#1F5FA8", c2: "#9DBBE0" }, { k: "Centro Norte", c: "#1E8E5A", c2: "#9FD3B8" }].filter(z => CT === "all" || ok({ contrato: z.k }));
+  const S = MU === "valor" ? CS.flatMap(z => [{ k: z.k + "|a", l: z.k + " · apontado", c: z.c }, { k: z.k + "|b", l: z.k + " · M.O. da base (sem apontamento)", c: z.c2 }]) : CS.map(z => ({ k: z.k + "|t", l: z.k, c: z.c }));
+  const filtra = (c, k) => { const [ct, t] = k.split("|"); return U.filter(o => o.uf.slice(0, 7) === c && o.contrato === ct && (t === "t" || (t === "a") === (o.apontado != null))); };
   legenda($("#lgd-uf"), S);
-  $("#nota-iniv").textContent = MU === "valor" && iniV > ms[0] ? `O valor apontado só é registrado desde ${mlab(iniV)}, quando começou a planilha de controle; para os meses anteriores, veja Obras ou Postes.` : "";
-  barras($("#ch-ufano"), ms, S, (c, k) => sum(U.filter(o => o.uf.slice(0, 7) === c && o.contrato === k), met), fm,
-    { xfmt: mlab, sel: MESUF, click: (c, k) => { MESUF = c; render(); listaLiq(`Obras liquidadas (UF) em ${mlab(c)}` + (k ? " — " + k : ""), U.filter(o => o.uf.slice(0, 7) === c && (!k || o.contrato === k))); } });
-  const one = [{ k: "v", l: { valor: "Valor apontado", obras: "Obras", postes: "Postes" }[MU], c: "#2B2D2F" }];
+  $("#nota-iniv").textContent = MU === "valor" ? "Obra sem apontamento na planilha de controle (principalmente antes de mai/26, quando o controle começou) entra com o valor de M.O. da base técnica (VR_MAO_DE_OBRA), em tom mais claro." : "";
+  barras($("#ch-ufano"), ms, S, (c, k) => sum(filtra(c, k), met), fm,
+    { xfmt: mlab, sel: MESUF, click: (c, k) => { MESUF = c; render(); listaLiq(`Obras liquidadas (UF) em ${mlab(c)}` + (k ? " — " + S.find(z => z.k === k).l : ""), k ? filtra(c, k) : U.filter(o => o.uf.slice(0, 7) === c)); } });
+  const one = [{ k: "v", l: { valor: "Valor", obras: "Obras", postes: "Postes" }[MU], c: "#2B2D2F" }];
   const regs = [...new Set(Up.map(o => o.regional))].sort((a, b) => sum(Up.filter(o => o.regional === b), met) - sum(Up.filter(o => o.regional === a), met));
   barrasH($("#ch-ufreg"), regs, one, c => sum(Up.filter(o => o.regional === c), met), fm, c => listaLiq(`Liquidadas — ${c} — ${per}`, Up.filter(o => o.regional === c)));
   const asb = [...new Set(Up.map(o => o.fechador || "Não lançada"))].sort((a, b) => sum(Up.filter(o => (o.fechador || "Não lançada") === b), met) - sum(Up.filter(o => (o.fechador || "Não lançada") === a), met));
